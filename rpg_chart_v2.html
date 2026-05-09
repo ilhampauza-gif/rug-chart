@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPG Skill Chart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f13;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+    #status {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 1rem;
+      height: 16px;
+    }
+    svg text { font-family: 'Segoe UI', sans-serif; }
+    #legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 1.5rem;
+      font-size: 13px;
+      color: #aaa;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-level {
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+    #refresh {
+      margin-top: 1.5rem;
+      padding: 8px 20px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+    #refresh:hover { border-color: #7F77DD; color: #7F77DD; }
+  </style>
+</head>
+<body>
+  <h1>⚔️ Skill Status</h1>
+  <div id="status">Loading...</div>
+  <svg id="pentagon" viewBox="0 0 340 320" width="320" height="300" role="img" aria-label="Pentagon radar chart of RPG skill levels"></svg>
+  <div id="legend"></div>
+  <button id="refresh" onclick="fetchData()">↺ Refresh</button>
+
+  <script>
+    const WORKER_URL = 'https://lingering-star-1a44.ilhampauza.workers.dev';
+
+    const SKILLS = [
+      { key: 'health level', label: 'Health', emoji: '❤️', color: '#E24B4A' },
+      { key: 'strength level', label: 'Strength', emoji: '⚔️', color: '#BA7517' },
+      { key: 'insight level', label: 'Insight', emoji: '🔮', color: '#185FA5' },
+      { key: 'charisma level', label: 'Charisma', emoji: '✨', color: '#0F6E56' },
+      { key: 'mental health level', label: 'Mental Health', emoji: '🧠', color: '#534AB7' },
+    ];
+
+    const N = 5, cx = 170, cy = 155, R = 110;
+    function angle(i) { return (Math.PI * 2 * i / N) - Math.PI / 2; }
+    function pt(r, i) { return [cx + r * Math.cos(angle(i)), cy + r * Math.sin(angle(i))]; }
+
+    function drawChart(levels) {
+      const svg = document.getElementById('pentagon');
+      svg.innerHTML = '';
+      const MAX = Math.max(10, ...levels.map(l => l + 3));
+      const gridColor = 'rgba(255,255,255,0.06)';
+      const axisColor = 'rgba(255,255,255,0.08)';
+
+      [0.25, 0.5, 0.75, 1].forEach(frac => {
+        const pts = Array.from({length: N}, (_, i) => pt(R * frac, i).join(',')).join(' ');
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        el.setAttribute('points', pts);
+        el.setAttribute('fill', 'none');
+        el.setAttribute('stroke', gridColor);
+        el.setAttribute('stroke-width', '1');
+        svg.appendChild(el);
+      });
+
+      for (let i = 0; i < N; i++) {
+        const [x, y] = pt(R, i);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+        line.setAttribute('x2', x); line.setAttribute('y2', y);
+        line.setAttribute('stroke', axisColor); line.setAttribute('stroke-width', '1');
+        svg.appendChild(line);
+      }
+
+      const areaPts = levels.map((v, i) => pt(R * Math.min(v / MAX, 1), i).join(',')).join(' ');
+      const area = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      area.setAttribute('points', areaPts);
+      area.setAttribute('fill', 'rgba(127,119,221,0.15)');
+      area.setAttribute('stroke', '#7F77DD');
+      area.setAttribute('stroke-width', '2');
+      svg.appendChild(area);
+
+      levels.forEach((v, i) => {
+        const [x, y] = pt(R * Math.min(v / MAX, 1), i);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '5');
+        c.setAttribute('fill', SKILLS[i].color);
+        c.setAttribute('stroke', '#0f0f13');
+        c.setAttribute('stroke-width', '2');
+        svg.appendChild(c);
+
+        const lvl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lvl.setAttribute('x', x); lvl.setAttribute('y', y - 11);
+        lvl.setAttribute('text-anchor', 'middle');
+        lvl.setAttribute('font-size', '10');
+        lvl.setAttribute('font-weight', '600');
+        lvl.setAttribute('fill', SKILLS[i].color);
+        lvl.textContent = v;
+        svg.appendChild(lvl);
+      });
+
+      SKILLS.forEach((s, i) => {
+        const [x, y] = pt(R + 25, i);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x); text.setAttribute('y', y);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('font-size', '11');
+        text.setAttribute('fill', '#999');
+        text.textContent = s.label;
+        svg.appendChild(text);
+      });
+
+      const legend = document.getElementById('legend');
+      legend.innerHTML = SKILLS.map((s, i) =>
+        `<div class="legend-item">
+          <div class="legend-dot" style="background:${s.color}"></div>
+          ${s.emoji} ${s.label} <span class="legend-level">Lv.${levels[i]}</span>
+        </div>`
+      ).join('');
+    }
+
+    async function fetchData() {
+      document.getElementById('status').textContent = 'Fetching from Notion...';
+      try {
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+        const props = data.results[0].properties;
+
+        const levels = SKILLS.map(s => {
+          const key = Object.keys(props).find(k => k.toLowerCase() === s.key);
+          if (!key) return 1;
+          const p = props[key];
+          if (p.type === 'formula') return Math.max(1, Math.round(p.formula.number || 1));
+          if (p.type === 'number') return Math.max(1, p.number || 1);
+          return 1;
+        });
+
+        document.getElementById('status').textContent = 'Live data from Notion ✓';
+        drawChart(levels);
+      } catch (e) {
+        document.getElementById('status').textContent = 'Error: ' + e.message;
+        drawChart([1, 1, 1, 1, 1]);
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
