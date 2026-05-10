@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RPG Skill Chart</title>
   <style>
+    html, body {
+      background: #191919 !important;
+      background-color: #191919 !important;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -22,6 +25,9 @@
   <svg id="pentagon" viewBox="0 0 340 320" width="340" height="320" role="img" aria-label="Pentagon radar chart of RPG skill levels"></svg>
 
   <script>
+    document.documentElement.style.backgroundColor = '#191919';
+    document.body.style.backgroundColor = '#191919';
+
     const WORKER_URL = 'https://lingering-star-1a44.ilhampauza.workers.dev';
 
     const SKILLS = [
@@ -33,7 +39,6 @@
     ];
 
     const CYAN = '#00e5ff';
-    const CYAN_FILL = 'rgba(0, 229, 255, 0.08)';
     const CYAN_GRID = 'rgba(0, 229, 255, 0.15)';
     const CYAN_AXIS = 'rgba(0, 229, 255, 0.1)';
     const CYAN_AREA = 'rgba(0, 229, 255, 0.12)';
@@ -48,7 +53,6 @@
       svg.innerHTML = '';
       const MAX = Math.max(10, ...levels.map(l => l + 3));
 
-      // Grid rings (6 levels)
       for (let ring = 1; ring <= 6; ring++) {
         const frac = ring / 6;
         const pts = Array.from({length: N}, (_, i) => pt(R * frac, i).join(',')).join(' ');
@@ -60,7 +64,6 @@
         svg.appendChild(el);
       }
 
-      // Axis lines
       for (let i = 0; i < N; i++) {
         const [x, y] = pt(R, i);
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -71,7 +74,6 @@
         svg.appendChild(line);
       }
 
-      // Filled area
       const areaPts = levels.map((v, i) => pt(R * Math.min(v / MAX, 1), i).join(',')).join(' ');
       const area = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       area.setAttribute('points', areaPts);
@@ -80,7 +82,6 @@
       area.setAttribute('stroke-width', '1.5');
       svg.appendChild(area);
 
-      // Dots at vertices
       levels.forEach((v, i) => {
         const [x, y] = pt(R * Math.min(v / MAX, 1), i);
         const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -90,7 +91,6 @@
         svg.appendChild(c);
       });
 
-      // Labels
       SKILLS.forEach((s, i) => {
         const [x, y] = pt(R + 22, i);
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
