@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPG Status</title>
+  <style>
+    html, body {
+      background: #191919 !important;
+      background-color: #191919 !important;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      font-family: 'Segoe UI', sans-serif;
+      color: #e0e0e0;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+    }
+    .level-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+    .level-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(0, 229, 255, 0.5);
+    }
+    .level-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #00e5ff;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    }
+    .bar-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0, 229, 255, 0.6), #00e5ff);
+      border-radius: 3px;
+      transition: width 0.8s ease;
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+    }
+    .coins-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+    }
+    .coin-amount {
+      font-weight: 600;
+      color: #ffc832;
+      text-shadow: 0 0 10px rgba(255, 200, 50, 0.3);
+    }
+    .coin-label {
+      color: rgba(255, 200, 50, 0.5);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="level-row">
+      <span class="level-label">Level</span>
+      <span class="level-number" id="level">—</span>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" id="bar" style="width: 0%"></div>
+    </div>
+    <div class="coins-row">
+      <span>🪙</span>
+      <span class="coin-amount" id="coins">—</span>
+      <span class="coin-label">Coins</span>
+    </div>
+  </div>
+
+  <script>
+    document.documentElement.style.backgroundColor = '#191919';
+    document.body.style.backgroundColor = '#191919';
+
+    const WORKER_URL = 'https://square-recipe-28f7.ilhampauza.workers.dev';
+
+    async function fetchData() {
+      try {
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+        const props = data.results[0].properties;
+
+        const levelProp = props['Level'] || props['Avatar Level'];
+        const level = levelProp?.formula?.number || 1;
+
+        const progressProp = props['Progress'];
+        const progress = progressProp?.formula?.number || 0;
+
+        const coinsProp = props['Coins left'];
+        const coins = coinsProp?.formula?.number || 0;
+
+        document.getElementById('level').textContent = level;
+        document.getElementById('bar').style.width = Math.min(progress, 100) + '%';
+        document.getElementById('coins').textContent = coins.toLocaleString();
+
+      } catch (e) {
+        document.getElementById('level').textContent = '?';
+        document.getElementById('coins').textContent = '?';
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
